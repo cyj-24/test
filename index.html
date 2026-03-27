@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>猫猫图鉴大全</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            padding: 40px 0;
+            color: white;
+        }
+
+        header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .filters {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            position: relative;
+        }
+
+        .search-box input {
+            padding: 12px 20px 12px 45px;
+            border: none;
+            border-radius: 30px;
+            width: 300px;
+            font-size: 16px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .search-box::before {
+            content: "🔍";
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .filter-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 30px;
+            background: white;
+            color: #764ba2;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .filter-btn:hover, .filter-btn.active {
+            background: #ffd700;
+            color: #333;
+            transform: translateY(-2px);
+        }
+
+        .cats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+            padding: 20px 0;
+        }
+
+        .cat-card {
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+        }
+
+        .cat-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+
+        .cat-image {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+        }
+
+        .cat-info {
+            padding: 20px;
+        }
+
+        .cat-name {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .cat-breed {
+            display: inline-block;
+            padding: 5px 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            margin-bottom: 12px;
+        }
+
+        .cat-tags {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+
+        .tag {
+            padding: 4px 10px;
+            background: #f0f0f0;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        .cat-desc {
+            color: #666;
+            line-height: 1.6;
+            font-size: 0.95rem;
+        }
+
+        .cat-traits {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+
+        .trait {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.9rem;
+            color: #555;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: 40px;
+            height: 40px;
+            background: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 10;
+        }
+
+        .modal-image {
+            width: 100%;
+            height: 350px;
+            object-fit: cover;
+        }
+
+        .modal-info {
+            padding: 30px;
+        }
+
+        .modal-info h2 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .detail-section {
+            margin-top: 20px;
+        }
+
+        .detail-section h3 {
+            color: #764ba2;
+            margin-bottom: 10px;
+        }
+
+        .detail-section p {
+            color: #555;
+            line-height: 1.8;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-item {
+            background: #f8f8f8;
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: #888;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #333;
+        }
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 2rem;
+            }
+
+            .search-box input {
+                width: 250px;
+            }
+
+            .cats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🐱 猫猫图鉴大全</h1>
+            <p>探索各种可爱的猫咪品种，找到你的梦中情猫</p>
+        </header>
+
+        <div class="filters">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="搜索猫咪名称或品种...">
+            </div>
+            <button class="filter-btn active" data-filter="all">全部</button>
+            <button class="filter-btn" data-filter="短毛">短毛</button>
+            <button class="filter-btn" data-filter="长毛">长毛</button>
+            <button class="filter-btn" data-filter="小型">小型</button>
+            <button class="filter-btn" data-filter="大型">大型</button>
+        </div>
+
+        <div class="cats-grid" id="catsGrid"></div>
+    </div>
+
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal()">×</button>
+            <img class="modal-image" id="modalImage" src="" alt="">
+            <div class="modal-info">
+                <h2 id="modalName"></h2>
+                <span class="cat-breed" id="modalBreed"></span>
+                <div class="stats" id="modalStats"></div>
+                <div class="detail-section">
+                    <h3>品种简介</h3>
+                    <p id="modalDesc"></p>
+                </div>
+                <div class="detail-section">
+                    <h3>性格特点</h3>
+                    <p id="modalPersonality"></p>
+                </div>
+                <div class="detail-section">
+                    <h3>饲养建议</h3>
+                    <p id="modalCare"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const cats = [
+            {
+                id: 1,
+                name: "糯米",
+                breed: "布偶猫",
+                category: ["长毛", "大型"],
+                image: "https://images.unsplash.com/photo-1513245543132-31f507417b26?w=400",
+                tags: ["温顺", "亲人", "颜值高"],
+                desc: "布偶猫是体型最大的家猫品种之一，以其蓝宝石般的眼睛和丝绸般的长毛而闻名。",
+                personality: "布偶猫性格极其温顺，喜欢被人抱在怀里，像布偶一样放松。它们对主人非常忠诚，会跟随主人在房间里走动。",
+                care: "需要每天梳理长毛防止打结，定期清洁眼睛。适合室内饲养，需要提供猫抓板。",
+                stats: { "体型": "大型", "毛发": "长毛", "寿命": "12-15年", "起源": "美国" }
+            },
+            {
+                id: 2,
+                name: "橘子",
+                breed: "英国短毛猫",
+                category: ["短毛", "中型"],
+                image: "https://images.unsplash.com/photo-1573865526739-10659fec78a5?w=400",
+                tags: ["安静", "独立", "好养"],
+                desc: "英短是最受欢迎的猫咪品种之一，圆脸圆眼，体型圆润，性格沉稳。",
+                personality: "英短性格温和安静，不喜欢吵闹，独立性较强。它们通常很友善，但不过分黏人。",
+                care: "短毛易于打理，每周梳理1-2次即可。容易发胖，需要控制饮食和适当运动。",
+                stats: { "体型": "中型", "毛发": "短毛", "寿命": "12-17年", "起源": "英国" }
+            },
+            {
+                id: 3,
+                name: "小黑",
+                breed: "孟买猫",
+                category: ["短毛", "中型"],
+                image: "https://images.unsplash.com/photo-1513360371669-4adf3dd7dff8?w=400",
+                tags: ["活泼", "聪明", "像豹子"],
+                desc: "孟买猫全身乌黑发亮，被称为'小黑豹'，眼睛呈古铜色或金色。",
+                personality: "孟买猫活泼好动，聪明伶俐，喜欢玩耍。它们对主人非常依恋，喜欢参与家庭活动。",
+                care: "短毛易于护理，定期梳理即可。需要足够的玩具和活动时间。",
+                stats: { "体型": "中型", "毛发": "短毛", "寿命": "12-16年", "起源": "美国" }
+            },
+            {
+                id: 4,
+                name: "雪球",
+                breed: "波斯猫",
+                category: ["长毛", "中型"],
+                image: "https://images.unsplash.com/photo-1518791841217-8f162f1e1131?w=400",
+                tags: ["优雅", "安静", "高贵"],
+                desc: "波斯猫是最古老的猫品种之一，以其长而华丽的被毛和扁平的面部特征著称。",
+                personality: "波斯猫性格安静优雅，喜欢宁静的环境。它们不喜欢剧烈活动，更喜欢慵懒地躺在舒适的地方。",
+                care: "需要每天梳理长毛，定期清洁面部褶皱和眼睛。需要保持凉爽的环境。",
+                stats: { "体型": "中型", "毛发": "长毛", "寿命": "10-15年", "起源": "波斯" }
+            },
+            {
+                id: 5,
+                name: "小虎",
+                breed: "美国短毛猫",
+                category: ["短毛", "中型"],
+                image: "https://images.unsplash.com/photo-1533738363-b7f9aef128ce?w=400",
+                tags: ["健壮", "活泼", "亲人"],
+                desc: "美短体格健壮，肌肉发达，毛发短而浓密，常见的有银虎斑花纹。",
+                personality: "美短性格友好活泼，聪明好学，适应能力强。它们喜欢和人互动，也能独自玩耍。",
+                care: "短毛易于打理，健康状况良好。需要提供足够的运动空间。",
+                stats: { "体型": "中型", "毛发": "短毛", "寿命": "15-20年", "起源": "美国" }
+            },
+            {
+                id: 6,
+                name: "豆豆",
+                breed: "暹罗猫",
+                category: ["短毛", "小型"],
+                image: "https://images.unsplash.com/photo-1513245543132-31f507417b26?w=400",
+                tags: ["话痨", "聪明", "黏人"],
+                desc: "暹罗猫是著名的短毛猫，拥有独特的重点色被毛和蓝宝石般的眼睛。",
+                personality: "暹罗猫非常聪明且善于表达，喜欢用独特的嗓音与主人交流。它们极度黏人，需要大量陪伴。",
+                care: "短毛易于打理，但需要大量精神刺激。不适合长时间独处。",
+                stats: { "体型": "小型", "毛发": "短毛", "寿命": "15-20年", "起源": "泰国" }
+            },
+            {
+                id: 7,
+                name: "馒头",
+                breed: "苏格兰折耳猫",
+                category: ["短毛", "中型"],
+                image: "https://images.unsplash.com/photo-1574158622682-e40e69881006?w=400",
+                tags: ["可爱", "温和", "独特"],
+                desc: "苏格兰折耳猫因耳朵向前折叠而得名，圆脸大眼，外形极其可爱。",
+                personality: "折耳猫性格温和安静，适应性强，喜欢与人和其他宠物相处。它们不太爱叫，是理想的公寓宠物。",
+                care: "需要特别注意耳朵清洁。由于遗传问题，需要定期体检，选择正规猫舍很重要。",
+                stats: { "体型": "中型", "毛发": "短毛", "寿命": "11-14年", "起源": "苏格兰" }
+            },
+            {
+                id: 8,
+                name: "辛巴",
+                breed: "缅因猫",
+                category: ["长毛", "大型"],
+                image: "https://images.unsplash.com/photo-1533743983669-94fa5c4338ec?w=400",
+                tags: ["巨型", "温柔", "像狮子"],
+                desc: "缅因猫是体型最大的家猫品种，拥有厚实的长毛和威武的鬃毛，被称为'温柔的巨人'。",
+                personality: "尽管体型巨大，缅因猫性格极其温柔。它们聪明、友善，喜欢玩水，甚至可以训练像狗一样服从命令。",
+                care: "需要定期梳理长毛，特别是腹部和腿部。食量大，需要提供高质量的食物。",
+                stats: { "体型": "大型", "毛发": "长毛", "寿命": "12-15年", "起源": "美国缅因州" }
+            },
+            {
+                id: 9,
+                name: "芝麻",
+                breed: "俄罗斯蓝猫",
+                category: ["短毛", "中型"],
+                image: "https://images.unsplash.com/photo-1543852786-1cf6624b9987?w=400",
+                tags: ["优雅", "害羞", "低敏"],
+                desc: "俄罗斯蓝猫拥有银蓝色的短毛和翡翠般的绿眼睛，外观优雅高贵。",
+                personality: "俄蓝性格较为害羞内向，对陌生人保持警惕，但对主人非常忠诚。它们安静、温柔，喜欢稳定的环境。",
+                care: "短毛易于打理，掉毛较少。需要耐心建立信任关系，不喜欢环境变化。",
+                stats: { "体型": "中型", "毛发": "短毛", "寿命": "15-20年", "起源": "俄罗斯" }
+            },
+            {
+                id: 10,
+                name: "琪琪",
+                breed: "斯芬克斯猫",
+                category: ["无毛", "中型"],
+                image: "https://images.unsplash.com/photo-1516280030429-27679b3dc9cf?w=400",
+                tags: ["无毛", "独特", "黏人"],
+                desc: "斯芬克斯猫是无毛猫品种，皮肤有皱纹，外观独特，触感像温暖的水蜜桃。",
+                personality: "斯芬克斯猫极其亲人，喜欢待在温暖的地方，包括主人的怀里。它们活泼好动，智商很高。",
+                care: "需要定期洗澡去除皮肤油脂，注意保暖，避免阳光直射。需要高热量食物维持体温。",
+                stats: { "体型": "中型", "毛发": "无毛", "寿命": "12-14年", "起源": "加拿大" }
+            },
+            {
+                id: 11,
+                name: "奶油",
+                breed: "加菲猫",
+                category: ["短毛", "中型"],
+                image: "https://images.unsplash.com/photo-1526336024174-e58f5cdd8e13?w=400",
+                tags: ["呆萌", "安静", "电影明星"],
+                desc: "异国短毛猫（加菲猫）拥有扁平的脸和大大的眼睛，表情呆萌可爱。",
+                personality: "加菲猫性格安静温和，不喜欢剧烈活动。它们友善、耐心，适合有孩子的家庭。",
+                care: "需要每天清洁面部褶皱和眼睛。短毛易于打理，但要注意泪痕问题。",
+                stats: { "体型": "中型", "毛发": "短毛", "寿命": "12-15年", "起源": "美国" }
+            },
+            {
+                id: 12,
+                name: "皮蛋",
+                breed: "中华田园猫",
+                category: ["短毛", "中型"],
+                image: "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=400",
+                tags: ["聪明", "好养", "多样"],
+                desc: "中华田园猫是中国本土猫咪的总称，包括狸花、橘猫、三花、黑白等多种花色。",
+                personality: "田园猫聪明机灵，适应能力强，身体素质好。性格因个体而异，有的亲人有的独立。",
+                care: "身体健壮，容易饲养。建议定期疫苗和驱虫，提供均衡饮食即可。",
+                stats: { "体型": "中型", "毛发": "短毛", "寿命": "12-18年", "起源": "中国" }
+            }
+        ];
+
+        const catsGrid = document.getElementById('catsGrid');
+        const searchInput = document.getElementById('searchInput');
+        const filterBtns = document.querySelectorAll('.filter-btn');
+        const modal = document.getElementById('modal');
+
+        function renderCats(catsToRender) {
+            catsGrid.innerHTML = catsToRender.map(cat => `
+                <div class="cat-card" onclick="openModal(${cat.id})">
+                    <img class="cat-image" src="${cat.image}" alt="${cat.name}" loading="lazy">
+                    <div class="cat-info">
+                        <div class="cat-name">${cat.name}</div>
+                        <span class="cat-breed">${cat.breed}</span>
+                        <div class="cat-tags">
+                            ${cat.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+                        </div>
+                        <p class="cat-desc">${cat.desc}</p>
+                        <div class="cat-traits">
+                            <span class="trait">📏 ${cat.stats['体型']}</span>
+                            <span class="trait">🧬 ${cat.category[0]}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function openModal(id) {
+            const cat = cats.find(c => c.id === id);
+            if (!cat) return;
+
+            document.getElementById('modalImage').src = cat.image;
+            document.getElementById('modalName').textContent = cat.name;
+            document.getElementById('modalBreed').textContent = cat.breed;
+            document.getElementById('modalDesc').textContent = cat.desc;
+            document.getElementById('modalPersonality').textContent = cat.personality;
+            document.getElementById('modalCare').textContent = cat.care;
+
+            const statsHtml = Object.entries(cat.stats).map(([key, value]) => `
+                <div class="stat-item">
+                    <div class="stat-label">${key}</div>
+                    <div class="stat-value">${value}</div>
+                </div>
+            `).join('');
+            document.getElementById('modalStats').innerHTML = statsHtml;
+
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal();
+        });
+
+        searchInput.addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            const filtered = cats.filter(cat =>
+                cat.name.toLowerCase().includes(term) ||
+                cat.breed.toLowerCase().includes(term) ||
+                cat.tags.some(tag => tag.toLowerCase().includes(term))
+            );
+            renderCats(filtered);
+        });
+
+        filterBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                filterBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                const filter = btn.dataset.filter;
+                if (filter === 'all') {
+                    renderCats(cats);
+                } else {
+                    const filtered = cats.filter(cat => cat.category.includes(filter));
+                    renderCats(filtered);
+                }
+            });
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeModal();
+        });
+
+        renderCats(cats);
+    </script>
+</body>
+</html>
