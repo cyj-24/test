@@ -68,8 +68,16 @@ npm run dev
 |------|------|------|
 | id | String | 主键 |
 | name | String | 家庭名称 |
-| inviteCode | String | 唯一邀请码 |
+| inviteCode | String | 唯一邀请码 (6位) |
 | createdAt | DateTime | 创建时间 |
+
+#### 邀请码规格
+
+- **长度**: 6 位字符
+- **字符集**: 大写字母 + 数字，排除易混淆字符
+- **允许字符**: `ABCDEFGHJKLMNPQRSTUVWXYZ23456789`
+- **排除字符**: `0` (零), `O` (字母O), `1` (一), `I` (字母I)
+- **输入处理**: 自动 trim + 转大写
 
 ### Member (成员)
 | 字段 | 类型 | 说明 |

@@ -7,6 +7,8 @@ import {
   setSession,
   clearSession,
   generateInviteCode,
+  normalizeInviteCode,
+  isValidInviteCode,
   requireAuth,
 } from "@/lib/auth";
 import { getStartOfWeek } from "@/lib/utils";
@@ -50,12 +52,22 @@ export async function completeChore(id: string, done: boolean) {
   revalidatePath("/chores");
 }
 
-export async function createHousehold(formData: FormData) {
+export type ActionResult<T = void> =
+  | { success: true; data: T }
+  | { success: false; error: string };
+
+export async function createHousehold(
+  formData: FormData
+): Promise<ActionResult<{ inviteCode: string }>> {
   const householdName = formData.get("householdName") as string;
   const memberName = formData.get("memberName") as string;
 
-  if (!householdName?.trim() || !memberName?.trim()) {
-    throw new Error("名称不能为空");
+  if (!householdName?.trim()) {
+    return { success: false, error: "请输入家庭名称" };
+  }
+
+  if (!memberName?.trim()) {
+    return { success: false, error: "请输入您的名字" };
   }
 
   const inviteCode = generateInviteCode();
@@ -83,23 +95,35 @@ export async function createHousehold(formData: FormData) {
     householdId: household.id,
   });
 
-  redirect("/");
+  return { success: true, data: { inviteCode } };
 }
 
-export async function joinHousehold(formData: FormData) {
+export async function joinHousehold(
+  formData: FormData
+): Promise<ActionResult> {
   const inviteCode = formData.get("inviteCode") as string;
   const memberName = formData.get("memberName") as string;
 
-  if (!inviteCode?.trim() || !memberName?.trim()) {
-    throw new Error("邀请码和名称不能为空");
+  if (!inviteCode?.trim()) {
+    return { success: false, error: "请输入邀请码" };
+  }
+
+  const normalizedCode = normalizeInviteCode(inviteCode);
+
+  if (!isValidInviteCode(normalizedCode)) {
+    return { success: false, error: "邀请码格式无效，请输入6位字母数字" };
+  }
+
+  if (!memberName?.trim()) {
+    return { success: false, error: "请输入您的名字" };
   }
 
   const household = await prisma.household.findUnique({
-    where: { inviteCode: inviteCode.trim().toUpperCase() },
+    where: { inviteCode: normalizedCode },
   });
 
   if (!household) {
-    throw new Error("邀请码无效");
+    return { success: false, error: "邀请码无效，请检查后重试" };
   }
 
   const member = await prisma.member.create({
@@ -149,6 +173,27 @@ export async function deleteTodo(id: string) {
     where: {
       id,
       householdId: member.householdId,
+    },
+  });
+
+  revalidatePath("/");
+  revalidatePath("/todos");
+}
+
+export async function updateTodo(
+  id: string,
+  data: { assigneeId?: string | null; dueDate?: string | null }
+) {
+  const member = await requireAuth();
+
+  await prisma.todo.update({
+    where: {
+      id,
+      householdId: member.householdId,
+    },
+    data: {
+      assigneeId: data.assigneeId === "" ? null : data.assigneeId,
+      dueDate: data.dueDate ? new Date(data.dueDate) : null,
     },
   });
 
