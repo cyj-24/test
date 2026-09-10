@@ -1,0 +1,87 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  PARENT
+  MEMBER
+}
+
+model Household {
+  id         String   @id @default(cuid())
+  name       String
+  inviteCode String   @unique
+  createdAt  DateTime @default(now())
+
+  members Member[]
+  todos   Todo[]
+  chores  Chore[]
+
+  @@index([inviteCode])
+}
+
+model Member {
+  id          String   @id @default(cuid())
+  householdId String
+  name        String
+  role        Role     @default(MEMBER)
+  createdAt   DateTime @default(now())
+
+  household        Household         @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  assignedTodos    Todo[]            @relation("TodoAssignee")
+  choreAssignments ChoreAssignment[]
+
+  @@index([householdId])
+}
+
+model Todo {
+  id          String    @id @default(cuid())
+  householdId String
+  title       String
+  assigneeId  String?
+  dueDate     DateTime?
+  done        Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  assignee  Member?   @relation("TodoAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+
+  @@index([householdId, done])
+  @@index([householdId, dueDate])
+  @@index([assigneeId])
+}
+
+model Chore {
+  id          String   @id @default(cuid())
+  householdId String
+  title       String
+  createdAt   DateTime @default(now())
+
+  household   Household         @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  assignments ChoreAssignment[]
+
+  @@index([householdId])
+}
+
+model ChoreAssignment {
+  id        String   @id @default(cuid())
+  choreId   String
+  memberId  String
+  weekStart DateTime @db.Date
+  done      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  chore  Chore  @relation(fields: [choreId], references: [id], onDelete: Cascade)
+  member Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@unique([choreId, weekStart])
+  @@index([choreId, weekStart])
+  @@index([memberId, weekStart])
+}
