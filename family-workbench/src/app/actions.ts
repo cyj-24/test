@@ -201,6 +201,40 @@ export async function updateTodo(
   revalidatePath("/todos");
 }
 
+export async function createChoreWithAssignment(
+  title: string,
+  memberIds: string[]
+) {
+  const member = await requireAuth();
+
+  if (!title?.trim()) {
+    throw new Error("标题不能为空");
+  }
+
+  const weekStart = getStartOfWeek();
+
+  const chore = await prisma.chore.create({
+    data: {
+      householdId: member.householdId,
+      title: title.trim(),
+    },
+  });
+
+  if (memberIds.length > 0) {
+    await prisma.choreAssignment.create({
+      data: {
+        choreId: chore.id,
+        memberId: memberIds[0],
+        weekStart,
+        done: false,
+      },
+    });
+  }
+
+  revalidatePath("/");
+  revalidatePath("/chores");
+}
+
 export async function createChore(formData: FormData) {
   const member = await requireAuth();
 
@@ -304,6 +338,25 @@ export async function updateMemberRole(memberId: string, role: Role) {
   });
 
   revalidatePath("/family");
+}
+
+export async function regenerateInviteCode(): Promise<ActionResult<{ inviteCode: string }>> {
+  const member = await requireAuth();
+
+  if (member.role !== Role.PARENT) {
+    return { success: false, error: "只有家长可以重新生成邀请码" };
+  }
+
+  const newInviteCode = generateInviteCode();
+
+  await prisma.household.update({
+    where: { id: member.householdId },
+    data: { inviteCode: newInviteCode },
+  });
+
+  revalidatePath("/family");
+
+  return { success: true, data: { inviteCode: newInviteCode } };
 }
 
 export async function logout() {
